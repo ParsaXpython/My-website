@@ -32,23 +32,22 @@ jobs:
           # پوشه اصلی برای دیپلوی
           mkdir -p deploy
           
-          # کپی فایل‌های standalone
+          # 1. کپی فایل‌های standalone
           cp -r .next/standalone/* deploy/
           
-          # کپی پوشه public
-          cp -r public deploy/public
+          # 2. کپی کامل .next (برای دسترسی به build)
+          cp -r .next deploy/.next
           
-          # کپی فایل‌های استاتیک
-          mkdir -p deploy/.next
-          cp -r .next/static deploy/.next/static
-          
-          # کپی کامل node_modules
+          # 3. کپی node_modules کامل
           cp -r node_modules deploy/node_modules
           
-          # کپی package.json
+          # 4. کپی public
+          cp -r public deploy/public
+          
+          # 5. کپی package.json
           cp package.json deploy/
           
-          # ایجاد start.sh
+          # 6. ایجاد start.sh
           cat > deploy/start.sh << 'EOF'
           #!/bin/bash
           export NODE_ENV=production
@@ -59,7 +58,7 @@ jobs:
           
           chmod +x deploy/start.sh
           
-          # ایجاد bonto.json
+          # 7. ایجاد bonto.json
           cat > deploy/bonto.json << 'EOF'
           {
             "start": "bash start.sh",
@@ -67,7 +66,7 @@ jobs:
           }
           EOF
           
-          # ایجاد package.json جدید
+          # 8. ایجاد package.json جدید
           cat > deploy/package.json << 'EOF'
           {
             "name": "blog",
@@ -104,5 +103,5 @@ jobs:
           # ورود به پوشه و commit + push
           cd bonto-repo
           git add .
-          git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')"
+          git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes"
           git push $REPO_URL main
