@@ -1,4 +1,4 @@
-name: Build Next.js and Deploy to Bonto
+name: Deploy to Bonto (Full with node_modules)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -20,53 +20,76 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build Next.js app
-        run: npx next build
+        run: npm run build
         env:
           NODE_ENV: production
 
-      - name: Create standalone output
+      - name: Prepare deployment package
         run: |
+          # پوشه‌ی اصلی برای دیپلوی
           mkdir -p deploy
+          
+          # کپی فایل‌های standalone
           cp -r .next/standalone/* deploy/
+          
+          # کپی پوشه public
           cp -r public deploy/public
+          
+          # کپی فایل‌های استاتیک
           mkdir -p deploy/.next
           cp -r .next/static deploy/.next/static
+          
+          # کپی کامل node_modules
+          cp -r node_modules deploy/node_modules
+          
+          # کپی package.json
           cp package.json deploy/
           
+          # ایجاد start.sh
           cat > deploy/start.sh << 'EOF'
           #!/bin/bash
           export NODE_ENV=production
           export PORT=3000
+          export NODE_OPTIONS="--max-old-space-size=384"
           node server.js
           EOF
           
           chmod +x deploy/start.sh
           
+          # ایجاد bonto.json
           cat > deploy/bonto.json << 'EOF'
           {
             "start": "bash start.sh",
             "port": 3000
           }
           EOF
+          
+          # ایجاد package.json جدید
+          cat > deploy/package.json << 'EOF'
+          {
+            "name": "blog",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "node server.js"
+            },
+            "dependencies": {
+              "next": "16.3.3",
+              "react": "19.0.0",
+              "react-dom": "19.0.0"
+            }
+          }
+          EOF
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: bonto-deploy
-          path: deploy/
-          retention-days: 7
-
-      # ====== دیپلوی خودکار به Bonto با Git ======
       - name: Deploy to Bonto via Git
         run: |
           # تنظیم Git
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           
-          # ساخت آدرس با username و password از secrets
+          # آدرس ریپوی Bonto با احراز هویت
           REPO_URL="https://${{ secrets.BONTO_USERNAME }}:${{ secrets.BONTO_PASSWORD }}@api.bonto.dev/git/parsa.git"
           
           # کلون کردن ریپوی Bonto
@@ -75,10 +98,10 @@ jobs:
           # پاک کردن فایل‌های قبلی
           rm -rf bonto-repo/*
           
-          # کپی فایل‌های جدید
+          # کپی فایل‌های جدید از deploy به bonto-repo
           cp -r deploy/* bonto-repo/
           
-          # Commit و Push
+          # ورود به پوشه و commit + push
           cd bonto-repo
           git add .
           git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes"
