@@ -23,13 +23,13 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Build Next.js app
-        run: npm run build
+        run: npx next build
         env:
           NODE_ENV: production
 
       - name: Prepare deployment package
         run: |
-          # پوشه‌ی اصلی برای دیپلوی
+          # پوشه اصلی برای دیپلوی
           mkdir -p deploy
           
           # کپی فایل‌های standalone
@@ -93,7 +93,7 @@ jobs:
           REPO_URL="https://${{ secrets.BONTO_USERNAME }}:${{ secrets.BONTO_PASSWORD }}@api.bonto.dev/git/parsa.git"
           
           # کلون کردن ریپوی Bonto
-          git clone $REPO_URL bonto-repo || echo "Repo exists"
+          git clone $REPO_URL bonto-repo
           
           # پاک کردن فایل‌های قبلی
           rm -rf bonto-repo/*
@@ -104,5 +104,5 @@ jobs:
           # ورود به پوشه و commit + push
           cd bonto-repo
           git add .
-          git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes"
+          git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')"
           git push $REPO_URL main
