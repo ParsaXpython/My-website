@@ -76,7 +76,7 @@ jobs:
           
           # کلون کردن ریپوی Bonto (اگه از Git استفاده می‌کنی)
           # آدرس رو با آدرس واقعی Bonto جایگزین کن
-          git clone https://bonto.com/parsa/blog.git bonto-repo || echo "Repo exists"
+          git clone https://api.bonto.dev/git/parsa.git bonto-repo || echo "Repo exists"
           
           # پاک کردن فایل‌های قبلی
           rm -rf bonto-repo/*
