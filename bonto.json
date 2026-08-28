@@ -1,5 +1,0 @@
-{
-    "build": "npx next build",
-    "start": "npm start",
-    "install": "npm install --no-optional"
-  }

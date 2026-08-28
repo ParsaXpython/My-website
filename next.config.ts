@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
     config.cache = false;
     return config;
   },
-  turbopack: {}
+  turbopack: {},
+  output: "standalone",
 };
 
 export default nextConfig;

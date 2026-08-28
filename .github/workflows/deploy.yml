@@ -1,0 +1,92 @@
+name: Build Next.js and Deploy to Bonto
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. گرفتن کد از گیت‌هاب
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. تنظیم Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # 3. نصب وابستگی‌ها
+      - name: Install dependencies
+        run: npm ci 
+
+      # 4. بیلد پروژه
+      - name: Build Next.js app
+        run: npx next build
+        env:
+          NODE_ENV: production
+
+      # 5. ایجاد خروجی standalone
+      - name: Create standalone output
+        run: |
+          mkdir -p deploy
+          
+          # کپی فایل‌های standalone
+          cp -r .next/standalone/* deploy/
+          
+          # کپی پوشه public
+          cp -r public deploy/public
+          
+          # کپی فایل‌های استاتیک Next.js
+          mkdir -p deploy/.next
+          cp -r .next/static deploy/.next/static
+          
+          # کپی package.json برای اجرا
+          cp package.json deploy/
+          
+          # ایجاد فایل start.sh برای اجرا
+          cat > deploy/start.sh << 'EOF'
+          #!/bin/bash
+          export NODE_ENV=production
+          export PORT=3000
+          node server.js
+          EOF
+          
+          chmod +x deploy/start.sh
+
+      # 6. آپلود به عنوان Artifact (برای دانلود دستی)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bonto-deploy
+          path: deploy/
+          retention-days: 7
+
+      # 7. دیپلوی به Bonto (از طریق Git)
+      - name: Deploy to Bonto
+        run: |
+          # تنظیم Git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # کلون کردن ریپوی Bonto (اگه از Git استفاده می‌کنی)
+          # آدرس رو با آدرس واقعی Bonto جایگزین کن
+          git clone https://bonto.com/parsa/blog.git bonto-repo || echo "Repo exists"
+          
+          # پاک کردن فایل‌های قبلی
+          rm -rf bonto-repo/*
+          
+          # کپی فایل‌های جدید
+          cp -r deploy/* bonto-repo/
+          
+          # Commit و Push به Bonto
+          cd bonto-repo
+          git add .
+          git commit -m "Deploy from GitHub Actions - $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes"
+          git push https://bonto.com/parsa/blog.git main
+          
