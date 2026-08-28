@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "buildPack": "next build --webpack",
+    "buildTorbu": "next build",
     "start": "next start",
+    "postbuildTorbu": "npm run start",
+    "postbuildPack": "npm run start",
     "lint": "eslint"
   },
   "dependencies": {
