@@ -15,23 +15,22 @@ jobs:
           node-version: 20
       - run: npm ci --legacy-peer-deps
       - run: npx next build
-      - run: |
+
+      - name: Prepare standalone
+        run: |
           mkdir -p deploy
-          cp -r .next deploy/.next
+          cp -r .next/standalone/* deploy/
           cp -r public deploy/public
-          cp -r node_modules deploy/node_modules
-          cp .next/standalone/server.js deploy/
-          cp package.json deploy/
+          cp .next/static deploy/.next/static || true
           cat > deploy/start.sh << 'EOF'
           #!/bin/bash
           export PORT=3000
           node server.js
           EOF
           chmod +x deploy/start.sh
-          cat > deploy/bonto.json << 'EOF'
-          {"start": "bash start.sh", "port": 3000}
-          EOF
-      - run: |
+
+      - name: Push to Bonto
+        run: |
           git config --global user.name "Actions"
           git config --global user.email "actions@github.com"
           REPO_URL="https://${{ secrets.BONTO_USERNAME }}:${{ secrets.BONTO_PASSWORD }}@api.bonto.dev/git/parsa.git"
